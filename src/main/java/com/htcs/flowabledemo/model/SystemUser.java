@@ -1,83 +1,73 @@
 package com.htcs.flowabledemo.model;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
- * @author 
+ * @author
  */
 public class SystemUser{
-    private Integer id;
+    private String id;
+    private String firstName;
+    private String LastName;
+    private String email;
+    private String Fullname;
+    private List<SystemGroup> groups;
+    private String privileges;
 
-    private String userName;
+    public String getPrivileges() {
+        return privileges;
+    }
 
-    private Integer userId;
+    public void setPrivileges(String privileges) {
+        this.privileges = privileges;
+    }
 
-    public SystemUser() {}
-    
-    private static final long serialVersionUID = 1L;
+    public List<SystemGroup> getGroups() {
+        return groups;
+    }
 
-    public Integer getId() {
+    public void setGroups(List<SystemGroup> groups) {
+        this.groups = groups;
+    }
+
+    public String getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public String getUserName() {
-        return userName;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
     }
 
-    public Integer getUserId() {
-        return userId;
+    public String getLastName() {
+        return LastName;
     }
 
-    public void setUserId(Integer userId) {
-        this.userId = userId;
+    public void setLastName(String lastName) {
+        LastName = lastName;
     }
 
-    @Override
-    public boolean equals(Object that) {
-        if (this == that) {
-            return true;
-        }
-        if (that == null) {
-            return false;
-        }
-        if (getClass() != that.getClass()) {
-            return false;
-        }
-        SystemUser other = (SystemUser) that;
-        return (this.getId() == null ? other.getId() == null : this.getId().equals(other.getId()))
-            && (this.getUserName() == null ? other.getUserName() == null : this.getUserName().equals(other.getUserName()))
-            && (this.getUserId() == null ? other.getUserId() == null : this.getUserId().equals(other.getUserId()));
+    public String getEmail() {
+        return email;
     }
 
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((getId() == null) ? 0 : getId().hashCode());
-        result = prime * result + ((getUserName() == null) ? 0 : getUserName().hashCode());
-        result = prime * result + ((getUserId() == null) ? 0 : getUserId().hashCode());
-        return result;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getClass().getSimpleName());
-        sb.append(" [");
-        sb.append("Hash = ").append(hashCode());
-        sb.append(", id=").append(id);
-        sb.append(", userName=").append(userName);
-        sb.append(", userId=").append(userId);
-        sb.append(", serialVersionUID=").append(serialVersionUID);
-        sb.append("]");
-        return sb.toString();
+    public String getFullname() {
+        return Fullname;
+    }
+
+    public void setFullname(String fullname) {
+        Fullname = fullname;
     }
 }

@@ -14,8 +14,4 @@ import com.htcs.flowabledemo.model.SystemUser;
 
 public interface SysteUserService {
 
-	int addUser(List<SystemUser > systemUser)throws Exception ;
-	
-	int addUser1(List<SystemUser > systemUser);
-	int addUser2(List<SystemUser > systemUser)throws Exception ;
 }

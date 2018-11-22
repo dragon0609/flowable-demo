@@ -19,13 +19,13 @@ var FLOWABLE = FLOWABLE || {};
 FLOWABLE.APP_URL = {
 
     /* ACCOUNT URLS */
-
+    /* 这里 修改为 login 自己的接口 */
     getAccountUrl: function () {
-        return FLOWABLE.CONFIG.contextRoot + '/app/rest/account';
+        return FLOWABLE.CONFIG.contextRoot + '/login/rest/account';
     },
 
     getLogoutUrl: function () {
-        return FLOWABLE.CONFIG.contextRoot + '/app/logout';
+        return FLOWABLE.CONFIG.contextRoot + '/login/logout';
     },
 
     /* MODEL URLS */

@@ -25,6 +25,6 @@ FLOWABLE.CONFIG = {
 	// 'webContextRoot' : pathname,
 	// 'datesLocalization' : false
     'onPremise' : false,
-    'contextRoot' : '/flowable-demo',
-    'webContextRoot' : '/flowable-demo'
+    'contextRoot' : '/',
+    'webContextRoot' : '/'
 };
