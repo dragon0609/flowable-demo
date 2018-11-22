@@ -3,6 +3,8 @@ package com.htcs.flowabledemo;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.flowable.engine.RuntimeService;
+import org.flowable.engine.runtime.ProcessInstance;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,21 +19,14 @@ public class FlowableDemoApplicationTests {
 
 	@Autowired
 	SysteUserService systemUserService;
-	
+
+	@Autowired
+	RuntimeService runtimeService;
+
     @Test
     public void contextLoads() {
-    	List<SystemUser> list = new LinkedList<>();
-    	for(int i=0; i<5; i++) {
-    		SystemUser systemUser = new SystemUser();
-    		systemUser.setUserId(i+1);
-    		systemUser.setUserName("A"+i);
-    		list.add(systemUser);
-    	}
-    	try {
-			systemUserService.addUser(list);
-		} catch (Exception e) {
-			System.out.println("出现异常："+e.getLocalizedMessage());
-		}
+    	ProcessInstance pi = runtimeService.startProcessInstanceByKey("myeProcess", "kkkkeee");
+		System.out.println(pi.getId());
     }
 
 }

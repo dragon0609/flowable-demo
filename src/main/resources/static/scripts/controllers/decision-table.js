@@ -31,7 +31,7 @@ angular.module('flowableModeler')
                 columnDefs: [],
                 columnVariableIdMap: {},
                 readOnly: true,
-                availableVariableTypes: ['string', 'number', 'boolean', 'date']
+                availableVariableTypes: ['string', 'number', 'boolean', 'date', 'collection']
             };
 
             // Hot Model init
@@ -45,7 +45,7 @@ angular.module('flowableModeler')
 
             var hotReadOnlyDecisionTableEditorInstance;
             var hitPolicies = ['FIRST', 'ANY', 'UNIQUE', 'PRIORITY', 'RULE ORDER', 'OUTPUT ORDER', 'COLLECT'];
-            var operators = ['==', '!=', '<', '>', '>=', '<='];
+            var operators = ['==', '!=', '<', '>', '>=', '<=', 'ANY OF', 'NONE OF', 'ALL OF', 'NOT ALL OF', 'IS IN', 'IS NOT IN'];
             var columnIdCounter = 0;
             var dateFormat = 'YYYY-MM-DD';
 
@@ -67,11 +67,11 @@ angular.module('flowableModeler')
             $scope.loadDecisionTable = function() {
                 var url, decisionTableUrl;
                 if ($routeParams.modelHistoryId) {
-                    url = FLOWABLE.CONFIG.contextRoot + '/app/rest/models/' + $routeParams.modelId + '/history/' + $routeParams.modelHistoryId;
-                    decisionTableUrl = FLOWABLE.CONFIG.contextRoot + '/app/rest/decision-table-models/history/' + $routeParams.modelHistoryId;
+                    url = FLOWABLE.APP_URL.getModelHistoryUrl($routeParams.modelId, $routeParams.modelHistoryId);
+                    decisionTableUrl = FLOWABLE.APP_URL.getDecisionTableModelsHistoryUrl($routeParams.modelHistoryId);
                 } else {
-                    url = FLOWABLE.CONFIG.contextRoot + '/app/rest/models/' + $routeParams.modelId;
-                    decisionTableUrl = FLOWABLE.CONFIG.contextRoot + '/app/rest/decision-table-models/' + $routeParams.modelId;
+                    url = FLOWABLE.APP_URL.getModelUrl($routeParams.modelId);
+                    decisionTableUrl = FLOWABLE.APP_URL.getDecisionTableModelUrl($routeParams.modelId);
                 }
 
                 $http({method: 'GET', url: url}).
@@ -99,7 +99,7 @@ angular.module('flowableModeler')
                     favorite: !$scope.model.decisionTable.favorite
                 };
 
-                $http({method: 'PUT', url: FLOWABLE.CONFIG.contextRoot + '/app/rest/models/' + $scope.model.latestModelId, data: data}).
+                $http({method: 'PUT', url: FLOWABLE.APP_URL.getModelUrl($scope.model.latestModelId), data: data}).
                     success(function(data, status, headers, config) {
                         $scope.model.favoritePending = false;
                         if ($scope.model.decisionTable.favorite) {
@@ -120,7 +120,7 @@ angular.module('flowableModeler')
                     includeLatestVersion: !$scope.model.decisionTable.latestVersion
                 };
 
-                $http({method: 'GET', url: FLOWABLE.CONFIG.contextRoot + '/app/rest/models/' + $scope.model.latestModelId + '/history', params: params}).
+                $http({method: 'GET', url: FLOWABLE.APP_URL.getModelHistoriesUrl($scope.model.latestModelId), params: params}).
                     success(function(data, status, headers, config) {
                         if ($scope.model.decisionTable.latestVersion) {
                             if (!data.data) {
@@ -257,6 +257,91 @@ angular.module('flowableModeler')
                 });
             };
 
+            $scope.doAfterValidate = function (isValid, value, row, prop, source) {
+                if (isCorrespondingCollectionOperator(row, prop)) {
+                    return true;
+                } else if (isCustomExpression(value) || isDashValue(value)) {
+                    disableCorrespondingOperatorCell(row, prop);
+                    return true;
+                } else {
+                    enableCorrespondingOperatorCell(row, prop);
+                }
+            };
+
+            var isCustomExpression = function (val) {
+                return !!(val != null
+                    && (String(val).startsWith('${') || String(val).startsWith('#{')));
+            };
+
+            var isDashValue = function (val) {
+                return !!(val != null && "-" === val);
+            };
+
+            var isCorrespondingCollectionOperator = function (row, prop) {
+                var operatorCol = getCorrespondingOperatorCell(row, prop);
+                var operatorCellMeta = hotReadOnlyDecisionTableEditorInstance.getCellMeta(row, operatorCol);
+
+                var isCollectionOperator = false;
+                if (isOperatorCell(operatorCellMeta)) {
+                    var operatorValue = hotReadOnlyDecisionTableEditorInstance.getDataAtCell(row, operatorCol);
+                    if (operatorValue === "IN" || operatorValue === "NOT IN" || operatorValue === "ANY" || operatorValue === "NOT ANY") {
+                        isCollectionOperator = true;
+                    }
+                }
+                return isCollectionOperator;
+            };
+
+            var disableCorrespondingOperatorCell = function (row, prop) {
+                var operatorCol = getCorrespondingOperatorCell(row, prop);
+                var operatorCellMeta = hotReadOnlyDecisionTableEditorInstance.getCellMeta(row, operatorCol);
+
+                if (!isOperatorCell(operatorCellMeta)) {
+                    return;
+                }
+
+                if (operatorCellMeta.className != null && operatorCellMeta.className.indexOf('custom-expression-operator') !== -1) {
+                    return;
+                }
+
+                var currentEditor = hotReadOnlyDecisionTableEditorInstance.getCellEditor(row, operatorCol);
+
+                hotReadOnlyDecisionTableEditorInstance.setCellMeta(row, operatorCol, 'className', operatorCellMeta.className + ' custom-expression-operator');
+                hotReadOnlyDecisionTableEditorInstance.setCellMeta(row, operatorCol, 'originalEditor', currentEditor);
+                hotReadOnlyDecisionTableEditorInstance.setCellMeta(row, operatorCol, 'editor', false);
+                hotReadOnlyDecisionTableEditorInstance.setDataAtCell(row, operatorCol, null);
+            };
+
+            var enableCorrespondingOperatorCell = function (row, prop) {
+                var operatorCol = getCorrespondingOperatorCell(row, prop);
+                var operatorCellMeta = hotReadOnlyDecisionTableEditorInstance.getCellMeta(row, operatorCol);
+
+                if (!isOperatorCell(operatorCellMeta)) {
+                    return;
+                }
+
+                if (operatorCellMeta == null || operatorCellMeta.className == null || operatorCellMeta.className.indexOf('custom-expression-operator') == -1) {
+                    return;
+                }
+
+                operatorCellMeta.className = operatorCellMeta.className.replace('custom-expression-operator', '');
+                hotReadOnlyDecisionTableEditorInstance.setCellMeta(row, operatorCol, 'className', operatorCellMeta.className);
+                hotReadOnlyDecisionTableEditorInstance.setCellMeta(row, operatorCol, 'editor', operatorCellMeta.originalEditor);
+                hotReadOnlyDecisionTableEditorInstance.setDataAtCell(row, operatorCol, '==');
+            };
+
+            var getCorrespondingOperatorCell = function (row, prop) {
+                var currentCol = hotReadOnlyDecisionTableEditorInstance.propToCol(prop);
+                if (currentCol < 1) {
+                    return;
+                }
+                var operatorCol = currentCol - 1;
+                return operatorCol;
+            };
+
+            var isOperatorCell = function (cellMeta) {
+                return !(cellMeta == null || cellMeta.prop == null || typeof cellMeta.prop !== 'string'|| cellMeta.prop.endsWith("_operator") === false);
+            };
+
             var createNewInputExpression = function (inputExpression) {
                 var newInputExpression;
                 if (inputExpression) {
@@ -355,8 +440,8 @@ angular.module('flowableModeler')
                 return newOutputExpression;
             };
 
-            var _loadDecisionTableDefinition = function (modelId) {
-                DecisionTableService.fetchDecisionTableDetails(modelId).then(function (decisionTable) {
+            var _loadDecisionTableDefinition = function (modelId, historyId) {
+                DecisionTableService.fetchDecisionTableDetails(modelId, historyId).then(function (decisionTable) {
 
                     $rootScope.currentDecisionTable = decisionTable.decisionTableDefinition;
                     $rootScope.currentDecisionTable.id = decisionTable.id;
@@ -464,7 +549,7 @@ angular.module('flowableModeler')
                     data: inputExpression.id + '_operator',
                     expressionType: 'input-operator',
                     expression: inputExpression,
-                    width: '60',
+                    width: '70',
                     className: 'input-operator-cell',
                     type: 'dropdown',
                     source: operators
@@ -546,10 +631,6 @@ angular.module('flowableModeler')
                         break;
                     default:
                         type = 'text';
-                }
-
-                if (outputExpression.complexExpression) {
-                    type = 'text';
                 }
 
                 var title = '';
@@ -643,7 +724,7 @@ angular.module('flowableModeler')
             };
 
             // fetch table from service and populate model
-            _loadDecisionTableDefinition($routeParams.modelId);
+            _loadDecisionTableDefinition($routeParams.modelId, $routeParams.modelHistoryId);
 
             var _generateColumnId = function () {
                 columnIdCounter++;

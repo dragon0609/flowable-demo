@@ -28,7 +28,19 @@ angular.module('flowableModeler')
 
             var hotDecisionTableEditorInstance;
             var hitPolicies = ['FIRST', 'ANY', 'UNIQUE', 'PRIORITY', 'RULE ORDER', 'OUTPUT ORDER', 'COLLECT'];
-            var operators = ['==', '!=', '<', '>', '>=', '<='];
+            var stringOperators = ['==', '!=', 'IS IN', 'IS NOT IN'];
+            var numberOperators = ['==', '!=', '<', '>', '>=', '<=', 'IS IN', 'IS NOT IN'];
+            var booleanOperators = ['==', '!='];
+            var dateOperators = ['==', '!=', '<', '>', '>=', '<=', 'IS IN', 'IS NOT IN'];
+            var collectionOperators = ['ANY OF', 'NONE OF', 'ALL OF', 'NOT ALL OF', '==', '!='];
+            var allOperators = ['==', '!=', '<', '>', '>=', '<=', 'ANY OF', 'NONE OF', 'ALL OF', 'NOT ALL OF', 'IS IN', 'IS NOT IN'];
+            var collectOperators = {
+                'SUM': '+',
+                'MIN': '<',
+                'MAX': '>',
+                'COUNT': '#'
+            };
+
             var columnIdCounter = 0;
             var hitPolicyHeaderElement;
             var dateFormat = 'YYYY-MM-DD';
@@ -44,7 +56,8 @@ angular.module('flowableModeler')
                 columnVariableIdMap: {},
                 startOutputExpression: 0,
                 selectedRow: undefined,
-                availableVariableTypes: ['string', 'number', 'boolean', 'date']
+                availableInputVariableTypes: ['string', 'number', 'boolean', 'date', 'collection'],
+                availableOutputVariableTypes: ['string', 'number', 'boolean', 'date']
             };
 
             // Hot Model init
@@ -53,7 +66,7 @@ angular.module('flowableModeler')
                     items: {
                         "insert_row_above": {
                             name: 'Insert rule above',
-                            callback: function(key, options) {
+                            callback: function (key, options) {
                                 if (hotDecisionTableEditorInstance.getSelected()) {
                                     $scope.addRule(hotDecisionTableEditorInstance.getSelected()[0]);
                                 }
@@ -61,7 +74,7 @@ angular.module('flowableModeler')
                         },
                         "insert_row_below": {
                             name: 'Add rule below',
-                            callback: function(key, options) {
+                            callback: function (key, options) {
                                 if (hotDecisionTableEditorInstance.getSelected()) {
                                     $scope.addRule(hotDecisionTableEditorInstance.getSelected()[0] + 1);
                                 }
@@ -69,7 +82,7 @@ angular.module('flowableModeler')
                         },
                         "clear_row": {
                             name: 'Clear rule',
-                            callback: function(key, options) {
+                            callback: function (key, options) {
                                 if (hotDecisionTableEditorInstance.getSelected()) {
                                     $scope.clearRule(hotDecisionTableEditorInstance.getSelected()[0]);
                                 }
@@ -89,23 +102,23 @@ angular.module('flowableModeler')
                         "hsep1": "---------",
                         "move_rule_up": {
                             name: 'Move rule up',
-                            disabled: function() {
+                            disabled: function () {
                                 if (hotDecisionTableEditorInstance.getSelected()) {
                                     return hotDecisionTableEditorInstance.getSelected()[0] === 0;
                                 }
                             },
-                            callback: function(key, options) {
+                            callback: function (key, options) {
                                 $scope.moveRuleUpwards();
                             }
                         },
                         "move_rule_down": {
                             name: 'Move rule down',
-                            disabled: function() {
+                            disabled: function () {
                                 if (hotDecisionTableEditorInstance.getSelected()) {
                                     return hotDecisionTableEditorInstance.getSelected()[0] + 1 === $scope.model.rulesData.length;
                                 }
                             },
-                            callback: function(key, options) {
+                            callback: function (key, options) {
                                 $scope.moveRuleDownwards();
                             }
                         },
@@ -151,6 +164,14 @@ angular.module('flowableModeler')
                 $scope.hitPolicies.push({
                     id: id,
                     label: 'DECISION-TABLE.HIT-POLICIES.' + id
+                });
+            });
+
+            $scope.collectOperators = [];
+            Object.keys(collectOperators).forEach(function (key) {
+                $scope.collectOperators.push({
+                    id: key,
+                    label: 'DECISION-TABLE.COLLECT-OPERATORS.' + key
                 });
             });
 
@@ -265,6 +286,96 @@ angular.module('flowableModeler')
                 console.log($scope.model.columnDefs);
             };
 
+            $scope.doAfterValidate = function (isValid, value, row, prop, source) {
+                if (isCorrespondingCollectionOperator(row, prop)) {
+                    return true;
+                } else if (isCustomExpression(value) || isDashValue(value)) {
+                    disableCorrespondingOperatorCell(row, prop);
+                    return true;
+                } else {
+                    enableCorrespondingOperatorCell(row, prop);
+                }
+            };
+
+            // dummy validator for text fields in order to trigger the post validation hook
+            var textValidator = function(value, callback) {
+                callback(true);
+            };
+
+            var isCustomExpression = function (val) {
+                return !!(val != null
+                    && (String(val).startsWith('${') || String(val).startsWith('#{')));
+            };
+
+            var isDashValue = function (val) {
+                return !!(val != null && "-" === val);
+            };
+
+            var isCorrespondingCollectionOperator = function (row, prop) {
+                var operatorCol = getCorrespondingOperatorCell(row, prop);
+                var operatorCellMeta = hotDecisionTableEditorInstance.getCellMeta(row, operatorCol);
+
+                var isCollectionOperator = false;
+                if (isOperatorCell(operatorCellMeta)) {
+                    var operatorValue = hotDecisionTableEditorInstance.getDataAtCell(row, operatorCol);
+                    if (operatorValue === "IN" || operatorValue === "NOT IN" || operatorValue === "ANY" || operatorValue === "NOT ANY") {
+                        isCollectionOperator = true;
+                    }
+                }
+                return isCollectionOperator;
+            };
+
+            var disableCorrespondingOperatorCell = function (row, prop) {
+                var operatorCol = getCorrespondingOperatorCell(row, prop);
+                var operatorCellMeta = hotDecisionTableEditorInstance.getCellMeta(row, operatorCol);
+
+                if (!isOperatorCell(operatorCellMeta)) {
+                    return;
+                }
+
+                if (operatorCellMeta.className != null && operatorCellMeta.className.indexOf('custom-expression-operator') !== -1) {
+                    return;
+                }
+
+                var currentEditor = hotDecisionTableEditorInstance.getCellEditor(row, operatorCol);
+
+                hotDecisionTableEditorInstance.setCellMeta(row, operatorCol, 'className', operatorCellMeta.className + ' custom-expression-operator');
+                hotDecisionTableEditorInstance.setCellMeta(row, operatorCol, 'originalEditor', currentEditor);
+                hotDecisionTableEditorInstance.setCellMeta(row, operatorCol, 'editor', false);
+                hotDecisionTableEditorInstance.setDataAtCell(row, operatorCol, null);
+            };
+
+            var enableCorrespondingOperatorCell = function (row, prop) {
+                var operatorCol = getCorrespondingOperatorCell(row, prop);
+                var operatorCellMeta = hotDecisionTableEditorInstance.getCellMeta(row, operatorCol);
+
+                if (!isOperatorCell(operatorCellMeta)) {
+                    return;
+                }
+
+                if (operatorCellMeta == null || operatorCellMeta.className == null || operatorCellMeta.className.indexOf('custom-expression-operator') == -1) {
+                    return;
+                }
+
+                operatorCellMeta.className = operatorCellMeta.className.replace('custom-expression-operator', '');
+                hotDecisionTableEditorInstance.setCellMeta(row, operatorCol, 'className', operatorCellMeta.className);
+                hotDecisionTableEditorInstance.setCellMeta(row, operatorCol, 'editor', operatorCellMeta.originalEditor);
+                hotDecisionTableEditorInstance.setDataAtCell(row, operatorCol, '==');
+            };
+
+            var getCorrespondingOperatorCell = function (row, prop) {
+                var currentCol = hotDecisionTableEditorInstance.propToCol(prop);
+                if (currentCol < 1) {
+                    return;
+                }
+                var operatorCol = currentCol - 1;
+                return operatorCol;
+            };
+
+            var isOperatorCell = function (cellMeta) {
+                return !(cellMeta == null || cellMeta.prop == null || typeof cellMeta.prop !== 'string'|| cellMeta.prop.endsWith("_operator") === false);
+            };
+
             var createNewInputExpression = function (inputExpression) {
                 var newInputExpression;
                 if (inputExpression) {
@@ -276,7 +387,7 @@ angular.module('flowableModeler')
                         newVariable: inputExpression.newVariable,
                         entries: inputExpression.entries
                     };
-                    
+
                 } else {
                     newInputExpression = {
                         id: _generateColumnId(),
@@ -301,7 +412,7 @@ angular.module('flowableModeler')
                         newVariable: outputExpression.newVariable,
                         entries: outputExpression.entries
                     };
-                    
+
                 } else {
                     newOutputExpression = {
                         id: _generateColumnId(),
@@ -416,6 +527,7 @@ angular.module('flowableModeler')
                 var editTemplate = 'views/popup/decision-table-edit-hit-policy.html';
 
                 $scope.model.hitPolicy = $scope.currentDecisionTable.hitIndicator;
+                $scope.model.collectOperator = $scope.currentDecisionTable.collectOperator;
 
                 _internalCreateModal({
                     template: editTemplate,
@@ -439,7 +551,7 @@ angular.module('flowableModeler')
                     $rootScope.currentDecisionTableModel = {
                         id: decisionTable.id,
                         name: decisionTable.name,
-                        key: decisionTable.decisionTableDefinition.key,
+                        key: decisionTable.key,
                         description: decisionTable.description
                     };
 
@@ -447,7 +559,12 @@ angular.module('flowableModeler')
                         $rootScope.currentDecisionTable.hitIndicator = hitPolicies[0];
                     }
 
-                    hitPolicyHeaderElement = angular.element('<div class="hit-policy-header"><a onclick="triggerHitPolicyEditor()">' + $rootScope.currentDecisionTable.hitIndicator.substring(0, 1) + '</a></div>');
+                    var hitPolicyHeaderString = '<div class="hit-policy-header"><a onclick="triggerHitPolicyEditor()">' + $rootScope.currentDecisionTable.hitIndicator.substring(0, 1);
+                    if ($rootScope.currentDecisionTable.collectOperator) {
+                        hitPolicyHeaderString += collectOperators[$rootScope.currentDecisionTable.collectOperator];
+                    }
+                    hitPolicyHeaderString += '</a></div>';
+                    hitPolicyHeaderElement = angular.element(hitPolicyHeaderString);
 
                     evaluateDecisionTableGrid($rootScope.currentDecisionTable);
 
@@ -468,10 +585,10 @@ angular.module('flowableModeler')
                     data: inputExpression.id + '_operator',
                     expressionType: 'input-operator',
                     expression: inputExpression,
-                    width: '60',
+                    width: '70',
                     className: 'input-operator-cell',
                     type: 'dropdown',
-                    source: operators
+                    source: getOperatorsForColumnType(inputExpression.type)
                 };
 
                 if ($scope.currentDecisionTable.inputExpressions.length !== 1) {
@@ -481,6 +598,23 @@ angular.module('flowableModeler')
                 }
 
                 return columnDefinition;
+            };
+
+            var getOperatorsForColumnType = function (type) {
+                switch (type) {
+                    case 'number':
+                        return numberOperators;
+                    case 'date':
+                        return dateOperators;
+                    case 'boolean':
+                        return booleanOperators;
+                    case 'string':
+                        return stringOperators;
+                    case 'collection':
+                        return collectionOperators;
+                    default:
+                        return allOperators;
+                }
             };
 
             var composeInputExpressionColumnDefinition = function (inputExpression) {
@@ -520,7 +654,7 @@ angular.module('flowableModeler')
 
                 if (inputExpression.entries && inputExpression.entries.length > 0) {
                     var entriesOptionValues = inputExpression.entries.slice(0, inputExpression.entries.length);
-                    entriesOptionValues.push('-', '', ' ');
+                    entriesOptionValues.push('-');
 
                     columnDefinition.type = 'dropdown';
                     columnDefinition.strict = true;
@@ -535,11 +669,13 @@ angular.module('flowableModeler')
                         '<div class="header-add-new-expression">' +
                         '<a onclick="triggerExpressionEditor(\'input\',' + expressionPosition + ',true)"><span class="glyphicon glyphicon-plus-sign"></span></a>' +
                         '</div>';
+                } else if (type === 'text') {
+                    columnDefinition.validator = textValidator;
                 }
 
                 if (type === 'date') {
                     columnDefinition.dateFormat = dateFormat;
-                    columnDefinition.validator = function(value, callback) {
+                    columnDefinition.validator = function (value, callback) {
                         if (value === '-') {
                             callback(true);
                         } else {
@@ -551,7 +687,7 @@ angular.module('flowableModeler')
                     columnDefinition.source = ['true', 'false', '-'];
                 }
 
-                if (type !== 'string') {
+                if (type !== 'text') {
                     columnDefinition.allowEmpty = false;
                 }
 
@@ -574,10 +710,6 @@ angular.module('flowableModeler')
                         break;
                     default:
                         type = 'text';
-                }
-
-                if (outputExpression.complexExpression) {
-                    type = 'text';
                 }
 
                 var title = '';
@@ -611,7 +743,7 @@ angular.module('flowableModeler')
                         '<div class="header-add-new-expression">' +
                         '<a onclick="triggerExpressionEditor(\'output\',' + expressionPosition + ',true)"><span class="glyphicon glyphicon-plus-sign"></span></a>' +
                         '</div>';
-                        
+
                 } else {
                     title += '<div class="output-header">' +
                         '<a onclick="triggerExpressionEditor(\'output\',' + expressionPosition + ',false)"><span class="header-label">' + (outputExpression.label ? outputExpression.label : "New Output") + '</span></a>' +
@@ -635,12 +767,16 @@ angular.module('flowableModeler')
             };
 
             $scope.evaluateDecisionHeaders = function (decisionTable) {
-            
+
                 var element = document.querySelector("thead > tr > th:first-of-type > div > a");
                 if (element) {
-                    element.innerHTML = decisionTable.hitIndicator.substring(0, 1);
+                    if (decisionTable.collectOperator) {
+                        element.innerHTML = decisionTable.hitIndicator.substring(0, 1) + collectOperators[decisionTable.collectOperator];
+                    } else {
+                        element.innerHTML = decisionTable.hitIndicator.substring(0, 1);
+                    }
                 }
-            
+
                 var columnDefinitions = [];
                 var inputExpressionCounter = 0;
                 if (decisionTable.inputExpressions && decisionTable.inputExpressions.length > 0) {
@@ -655,7 +791,7 @@ angular.module('flowableModeler')
 
                         inputExpressionCounter += 2;
                     });
-                    
+
                 } else { // create default input expression
                     decisionTable.inputExpressions = [];
                     var inputExpression = createNewInputExpression();
@@ -672,7 +808,7 @@ angular.module('flowableModeler')
                     decisionTable.outputExpressions.forEach(function (outputExpression) {
                         columnDefinitions.push(composeOutputColumnDefinition(outputExpression));
                     });
-                    
+
                 } else { // create default output expression
                     decisionTable.outputExpressions = [];
                     var outputExpression = createNewOutputExpression();
@@ -699,11 +835,6 @@ angular.module('flowableModeler')
                                 rowData[key] = '==';
                             }
                         }
-                        // else if (type === 'input-expression') {
-                        //     if (!(key in rowData) || rowData[key] === '') {
-                        //         rowData[key] = '-';
-                        //     }
-                        // }
                     });
                 }
             };
@@ -749,6 +880,9 @@ angular.module('flowableModeler')
                                 }
                             });
 
+                            // collection operators backwards compatibility
+                            // var cellValue = regressionTransformation(id, rule[id]);
+
                             tmpRowValues[id] = rule[id];
                         }
 
@@ -781,8 +915,6 @@ angular.module('flowableModeler')
 angular.module('flowableModeler')
     .controller('DecisionTableInputConditionEditorCtlr', ['$rootScope', '$scope', 'hotRegisterer', '$timeout', function ($rootScope, $scope, hotRegisterer, $timeout) {
 
-        var hotInstance;
-
         var getEntriesValues = function (entriesArrayOfArrays) {
             var newEntriesArray = [];
             // remove last value
@@ -801,7 +933,7 @@ angular.module('flowableModeler')
             while (localCopy.length) {
                 entriesArrayOfArrays.push(localCopy.splice(0, 1));
             }
-            
+
             return entriesArrayOfArrays;
         };
 
@@ -826,7 +958,7 @@ angular.module('flowableModeler')
             $scope.popup = {
                 selectedExpressionLabel: $scope.model.selectedExpression.label ? $scope.model.selectedExpression.label : '',
                 selectedExpressionVariableId: $scope.model.selectedExpression.variableId,
-                selectedExpressionVariableType: $scope.model.selectedExpression.type ? $scope.model.selectedExpression.type : $scope.model.availableVariableTypes[0],
+                selectedExpressionVariableType: $scope.model.selectedExpression.type ? $scope.model.selectedExpression.type : $scope.model.availableInputVariableTypes[0],
                 selectedExpressionInputValues: $scope.model.selectedExpression.entries && $scope.model.selectedExpression.entries.length > 0 ? createEntriesValues($scope.model.selectedExpression.entries) : [['']],
                 columnDefs: [
                     {
@@ -846,7 +978,7 @@ angular.module('flowableModeler')
             $scope.popup = {
                 selectedExpressionLabel: '',
                 selectedExpressionVariableId: '',
-                selectedExpressionVariableType: $scope.model.availableVariableTypes[0],
+                selectedExpressionVariableType: $scope.model.availableInputVariableTypes[0],
                 selectedExpressionInputValues: [['']],
                 columnDefs: [
                     {
@@ -871,16 +1003,16 @@ angular.module('flowableModeler')
                     variableId: $scope.popup.selectedExpressionVariableId,
                     type: $scope.popup.selectedExpressionVariableType,
                     label: $scope.popup.selectedExpressionLabel,
-                    entries: getEntriesValues($scope.popup.selectedExpressionInputValues)
+                    entries: $scope.popup.selectedExpressionVariableType !== 'collection' ? getEntriesValues($scope.popup.selectedExpressionInputValues) : []
                 };
 
                 $scope.addNewInputExpression(newInputExpression, $scope.model.selectedColumn + 1);
-                
+
             } else {
                 $scope.model.selectedExpression.variableId = $scope.popup.selectedExpressionVariableId;
                 $scope.model.selectedExpression.type = $scope.popup.selectedExpressionVariableType;
                 $scope.model.selectedExpression.label = $scope.popup.selectedExpressionLabel;
-                $scope.model.selectedExpression.entries = getEntriesValues($scope.popup.selectedExpressionInputValues);
+                $scope.model.selectedExpression.entries = $scope.popup.selectedExpressionVariableType !== 'collection' ? getEntriesValues($scope.popup.selectedExpressionInputValues) : [];
                 $scope.evaluateDecisionHeaders($scope.currentDecisionTable);
             }
 
@@ -931,7 +1063,7 @@ angular.module('flowableModeler')
             while (localCopy.length) {
                 entriesArrayOfArrays.push(localCopy.splice(0, 1));
             }
-            
+
             return entriesArrayOfArrays;
         };
 
@@ -959,7 +1091,7 @@ angular.module('flowableModeler')
             $scope.popup = {
                 selectedExpressionLabel: $scope.model.selectedExpression.label ? $scope.model.selectedExpression.label : '',
                 selectedExpressionNewVariableId: $scope.model.selectedExpression.variableId,
-                selectedExpressionNewVariableType: $scope.model.selectedExpression.type ? $scope.model.selectedExpression.type : $scope.model.availableVariableTypes[0],
+                selectedExpressionNewVariableType: $scope.model.selectedExpression.type ? $scope.model.selectedExpression.type : $scope.model.availableOutputVariableTypes[0],
                 selectedExpressionOutputValues: $scope.model.selectedExpression.entries && $scope.model.selectedExpression.entries.length > 0 ? createEntriesValues($scope.model.selectedExpression.entries) : [['']],
                 currentHitPolicy: $scope.model.hitPolicy,
                 columnDefs: [
@@ -975,15 +1107,13 @@ angular.module('flowableModeler')
                 hotSettings: {
                     currentColClassName: 'currentCol',
                     stretchH: 'none'
-                },
-                complexExpression:  $scope.model.selectedExpression.complexExpression
+                }
             };
-            
         } else {
             $scope.popup = {
                 selectedExpressionLabel: '',
                 selectedExpressionNewVariableId: '',
-                selectedExpressionNewVariableType: $scope.model.availableVariableTypes[0],
+                selectedExpressionNewVariableType: $scope.model.availableOutputVariableTypes[0],
                 selectedExpressionOutputValues: [['']],
                 currentHitPolicy: $scope.model.hitPolicy,
                 columnDefs: [
@@ -998,8 +1128,7 @@ angular.module('flowableModeler')
                 ],
                 hotSettings: {
                     stretchH: 'none'
-                },
-                complexExpression: false
+                }
             };
         }
 
@@ -1015,17 +1144,15 @@ angular.module('flowableModeler')
                     variableId: $scope.popup.selectedExpressionNewVariableId,
                     type: $scope.popup.selectedExpressionNewVariableType,
                     label: $scope.popup.selectedExpressionLabel,
-                    entries: getEntriesValues(hotInstance.getData()),
-                    complexExpression: $scope.popup.complexExpression
+                    entries: getEntriesValues(hotInstance.getData())
                 };
                 $scope.addNewOutputExpression(newOutputExpression, $scope.model.selectedColumn + 1);
-                
+
             } else {
                 $scope.model.selectedExpression.variableId = $scope.popup.selectedExpressionNewVariableId;
                 $scope.model.selectedExpression.type = $scope.popup.selectedExpressionNewVariableType;
                 $scope.model.selectedExpression.label = $scope.popup.selectedExpressionLabel;
                 $scope.model.selectedExpression.entries = getEntriesValues(hotInstance.getData());
-                $scope.model.selectedExpression.complexExpression = $scope.popup.complexExpression;
                 $scope.evaluateDecisionHeaders($scope.currentDecisionTable);
             }
 
@@ -1048,7 +1175,9 @@ angular.module('flowableModeler')
 
         $scope.popup = {
             currentHitPolicy: $scope.model.hitPolicy,
-            availableHitPolicies: $scope.hitPolicies
+            currentCollectOperator: $scope.model.collectOperator,
+            availableHitPolicies: $scope.hitPolicies,
+            availableCollectOperators: $scope.collectOperators
         };
 
         // Cancel button handler
@@ -1059,6 +1188,12 @@ angular.module('flowableModeler')
         // Saving the edited input
         $scope.save = function () {
             $scope.currentDecisionTable.hitIndicator = $scope.popup.currentHitPolicy;
+            if ($scope.popup.currentHitPolicy === 'COLLECT') {
+                $scope.currentDecisionTable.collectOperator = $scope.popup.currentCollectOperator;
+            } else {
+                $scope.currentDecisionTable.collectOperator = undefined;
+            }
+
             $scope.evaluateDecisionHeaders($scope.currentDecisionTable);
 
             $scope.close();

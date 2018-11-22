@@ -9,7 +9,11 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableAsync(proxyTargetClass = true)
 @EnableTransactionManagement
 @MapperScan(value = {"com.htcs.flowabledemo.dao"})
-@SpringBootApplication(scanBasePackages = "com.htcs.flowabledemo.*")
+@SpringBootApplication(scanBasePackages = "com.htcs.flowabledemo.*",
+    exclude = {
+        org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class
+    }
+)
 public class FlowableDemoApplication {
     public static void main(String[] args) {
         SpringApplication.run(FlowableDemoApplication.class, args);

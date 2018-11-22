@@ -317,6 +317,8 @@
         "POPUP": {
             "CREATE-TITLE": "Crear nueva tabla de decision",
             "CREATE-DESCRIPTION": "Es necesario dar un nombre par a la tabla de decision, es recomendable proporcionar una descripcion al mismo tiempo.",
+            "DUPLICATE-TITLE": "Duplicar tabla de decision",
+            "DUPLICATE-DESCRIPTION": "Puedes dar un nombre para la nueba tabla de decision es recomendable proporcionar una descripcion al mismo tiempo.",
             "SAVE-DESCRIPTION": "Es necesario proporcionar un nombre y un identificador unico para la tabla de decision, es recomendable proporcionar una descripcion al mismo tiempo",
             "DELETE-TITLE": "Borrar tabla de decision",
             "DELETE-DESCRIPTION": "Estas Seguro que deseas borrar esta tabla de decision \"{{name}}\"?",
@@ -432,6 +434,7 @@
     "FORM-BUILDER": {
         "PALLETTE": {
             "TEXT": "Texto",
+            "PASSWORD": "Contraseña",
             "MULTILINE-TEXT": "Texto en varias lineas",
             "NUMBER": "Numero",
             "CHECKBOX": "Checkbox",
@@ -442,7 +445,11 @@
             "GROUP-OF-PEOPLE": "Grupo de personas",
             "UPLOAD": "Upload",
             "EXPRESSION": "Expresion",
-	    "HYPERLINK": "Hipervínculo"
+	    	"HYPERLINK": "Hipervínculo",
+	    	"SPACER": "Spacer",
+			"HORIZONTAL-LINE": "Horizontal line",
+			"HEADLINE": "Headline",
+			"HEADLINE-WITH-LINE":"Headline"
         },
         "TABS": {
             "GENERAL": "General",
@@ -462,7 +469,8 @@
         },
         "MESSAGE": {
             "EMPTY-EXPRESSION": "(No expression value)",
-            "EXPRESSION-HELP": "Tambien puedes mostrar valores enviados anteriormente en cualquier formulario, como parte del texto, referenciandolo utilizando una notacion como la siguiente ${myFieldId}."
+            "EXPRESSION-HELP": "Tambien puedes mostrar valores enviados anteriormente en cualquier formulario, como parte del texto, referenciandolo utilizando una notacion como la siguiente ${myFieldId}.",
+            "OPTIONS-EXPRESSION-HELP": "Puede usar una expresión para completar dinámicamente las opciones, por ejemplo, haciendo referencia a una variable como esta ${optionsVariable}. La expresión debe dar como resultado un objeto java (java.util.List con objetos Option) o su representación json."
         },
         "LABEL" : {
             "FUNCTIONAL-GROUP": "Selecciona el grupo..",
@@ -477,12 +485,15 @@
             "RADIO-BUTTON-DEFAULT": "Opcion 1",
             "DROPDOWN-DEFAULT-EMPTY-SELECTION": "Por favor elige uno...",
             "DROPDOWN-EMPTY-VALUE-HELP": "Este es la opcion 'valor vacio'. Seleccionar esto en tiempo de ejecucion es igual a 'no valor' o 'vacio'.  Esto esta permitido para campos opcionales, pero no para campos requeridos.",
+            "OPTIONS-EXPRESSION": "Expresión de opciones:",
+            "OPTIONS-EXPRESSION-ENABLED": "Habilitar expresión de opciones",
             "REQUIRED": "Requerido",
             "EXPRESSION": "Expresion",
             "ADD-OPTION": "+ Agregar nueva opcion",
             "UPLOAD-ALLOW-MULTIPLE": "Permitir subir varios archivos",
 	          "MAX-LENGTH":"Longitud máxima:",
             "MIN-LENGTH":"Longitud mínima:",
+            "PASSWORD-UNMASK-OPTION": "Opción de enmascaramiento/desenmascaramiento de contraseña",
 	          "HYPERLINK-URL": "URL hiperlink",
 	          "REGEX-PATTERN":"Estándar  Regex",
             "MASK":{
@@ -558,7 +569,7 @@
     "FEATURE-TOUR" : {
         "BENDPOINT" : {
             "TITLE": "Tutorial punto de curva",
-            "DESCRIPTION" : "Cuando estas conectando un elemento con otro usando un flujo de secuencia (Esas felechas entre los pasos del proceso), encontraras que esos flujos de secuencia se crean de manera automatica, si deseas modificar la direccione de las flechas, puedes agregar o eliminar un punto de curva de un flujo de secuencia.<br/><br/> Como se muestra debajo en la figura, primero das click en el boton 'Agregar punto curva'y despues das click en el flujo de secuencia al que deseas agregarlo. El fluo de secuencia te indicará con un punto en verde que el punto curva puede ser agregado.<br/><br/> Para remover un punto curva, click  en 'eliminar punto curva' y da click en el flujo de secuencia del cual deseas remover."
+            "DESCRIPTION" : "Cuando estas conectando un elemento con otro usando un flujo de secuencia (Esas flechas entre los pasos del proceso), encontraras que esos flujos de secuencia se crean de manera automatica, si deseas modificar la direccione de las flechas, puedes agregar o eliminar un punto de curva de un flujo de secuencia.<br/> Como se muestra debajo en la figura, primero das click en el boton 'Agregar punto curva'y despues das click en el flujo de secuencia al que deseas agregarlo. El fluo de secuencia te indicará con un punto en verde que el punto curva puede ser agregado.<br/> Para eliminar un punto curva, click en 'eliminar punto curva' y da click en el flujo de secuencia del cual deseas eliminar."
         }
     },
 
@@ -691,6 +702,8 @@
     "PROPERTY.FORMPROPERTIES.EXPRESSION.PLACEHOLDER" : "Introduce una expresion",
     "PROPERTY.FORMPROPERTIES.VARIABLE" : "Variable",
     "PROPERTY.FORMPROPERTIES.VARIABLE.PLACEHOLDER" : "Introduce una variable",
+    "PROPERTY.FORMPROPERTIES.DEFAULT" : "default",
+    "PROPERTY.FORMPROPERTIES.DEFAULT.PLACEHOLDER" : "Introduce una default",
     "PROPERTY.FORMPROPERTIES.REQUIRED" : "Requerido",
     "PROPERTY.FORMPROPERTIES.READABLE" : "Leible",
     "PROPERTY.FORMPROPERTIES.WRITABLE" : "Escribible",
@@ -761,6 +774,29 @@
     "PROPERTY.EVENTLISTENERS.SIGNALNAME" : "Nombre de señal",
     "PROPERTY.EVENTLISTENERS.SIGNALNAME.PLACEHOLDER" : "Introduce un nombre de señal",
     "PROPERTY.EVENTLISTENERS.UNSELECTED" : "No hay escuchador de evento seleccionado",
+
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.VALUE" : "{{length}} lifecycle listeners",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.EMPTY" : "No lifecycle listeners configured",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.EVENT" : "Event",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.SOURCE_STATE" : "Source state",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.TARGET_STATE" : "Target state",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.CLASS" : "Class",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.CLASS.PLACEHOLDER" : "Enter a classname",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.EXPRESSION" : "Expression",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.EXPRESSION.PLACEHOLDER" : "Enter an expression",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.DELEGATEEXPRESSION" : "Delegate expression",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.DELEGATEEXPRESSION.PLACEHOLDER" : "Enter a delegate expression",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.UNSELECTED" : "No task listener selected",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.FIELDS.NAME" : "Name",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.FIELDS.NAME.PLACEHOLDER" : "Enter a name",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.FIELDS.EXPRESSION" : "Expression",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.FIELDS.EXPRESSION.PLACEHOLDER" : "Enter an expression",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.FIELDS.STRINGVALUE" : "String value",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.FIELDS.STRINGVALUE.PLACEHOLDER" : "Enter a string value",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.FIELDS.STRING" : "String",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.FIELDS.STRING.PLACEHOLDER" : "Enter a string",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.FIELDS.IMPLEMENTATION" : "Implementation",
+    "PROPERTY.PLANITEMLIFECYCLELISTENERS.FIELDS.EMPTY" : "No Field selected",
 
     "PROPERTY.SIGNALDEFINITIONS.DISPLAY" : "{{length}} definiciones de señal",
     "PROPERTY.SIGNALDEFINITIONS.EMPTY" : "No hay definiciones de señal",

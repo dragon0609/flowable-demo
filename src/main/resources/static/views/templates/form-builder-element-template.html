@@ -9,6 +9,11 @@
       <label class="control-label form-field-label">{{formElement.name}}</label><span class="marker" ng-if="formElement.required">*</span>
       <input type="text" class="form-control" style="cursor:default;background-color:#fff;" value="Text" disabled>
   </div>
+  
+    <div ng-switch-when="password" class="form-group">
+      <label class="control-label form-field-label">{{formElement.name}}</label><span class="marker" ng-if="formElement.required">*</span>
+      <input type="text" class="form-control" style="cursor:default;background-color:#fff;" value="Password" disabled>
+  	</div>
 
   <div ng-switch-when="multi-line-text" class="form-group">
       <label class="control-label form-field-label">{{formElement.name}}</label><span class="marker" ng-if="formElement.required">*</span>
@@ -34,10 +39,17 @@
               <input type="radio" name="optionsRadios" id="optionsRadios{{$index}}" value="option{{$index}}" ng-checked="formElement.value == option.name" disabled>{{option.name}}</input>
           </label>
       </div>
-      <div ng-show="!formElement.options && formElement.options.length === 0" class="radio">
+      <div ng-show="!formElement.options && formElement.options.length === 0 && !formElement.optionsExpression" class="radio">
           <label>
               <input type="radio" name="optionsRadios" id="optionsRadios1" value="option1" disabled>
               Option 1
+          </label>
+      </div>
+      <div ng-show="formElement.optionsExpression" ng-style="{'font-size': '1em'}">
+          <label>
+              <input type="radio" name="optionsRadios" id="optionsRadios1" value="none" disabled>
+                {{formElement.optionsExpression}}
+              </input>
           </label>
       </div>
       <div class="clearfix"></div>
@@ -87,6 +99,23 @@
   <div ng-switch-when="hyperlink" class="form-group">
     <label class="control-label form-field-label">{{formElement.name}}<span class="marker" ng-if="formElement.required">*</span></label>
     <div class="message" ng-show="formElement.params.hyperlinkUrl">{{formElement.params.hyperlinkUrl}}</div>
+  </div>
+  
+  <div ng-switch-when="spacer" class="form-group">
+	<br />
+  </div>
+  
+  <div ng-switch-when="horizontal-line" class="form-group">
+	<hr>
+  </div>
+
+  <div ng-switch-when="headline" class="form-group">
+	<h4><strong>{{formElement.name}}</strong></h4>
+  </div>
+
+  <div ng-switch-when="headline-with-line" class="form-group">
+	<h4><strong>{{formElement.name}}</strong></h4>
+	<hr>
   </div>
 
   <div ng-switch-when="expression" class="form-group">

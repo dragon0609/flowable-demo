@@ -36,7 +36,7 @@ angular.module('flowableModeler')
                 item: '=stencilItem'
             },
             restrict: 'E',
-            template: '<img class="stencil-item-list-icon" ng-if=\"item.customIconId != null && item.customIconId != undefined\" ng-src=\"' + FLOWABLE.CONFIG.contextRoot + '/app/rest/image/{{item.customIconId}}\" width=\"16px\" height=\"16px\"/>' +
+            template: '<img class="stencil-item-list-icon" ng-if=\"item.customIconId != null && item.customIconId != undefined\" ng-src=\"' + getImageUrl(item.customIconId) + '\" width=\"16px\" height=\"16px\"/>' +
             '<img class="stencil-item-list-icon" ng-if=\"(item.customIconId == null || item.customIconId == undefined) && item.icon != null && item.icon != undefined\" ng-src=\"editor-app/stencilsets/bpmn2.0/icons/{{item.icon}}\" width=\"16px\" height=\"16px\"/>'
         };
     }]);
@@ -97,7 +97,7 @@ angular.module('flowableModeler').directive('formBuilderElement', ['$rootScope',
                 {
                     "id": "advanced",
                     "name": $translate.instant('FORM-BUILDER.TABS.ADVANCED-OPTIONS'),
-                    "show": ['text', 'multi-line-text', 'integer', 'decimal','hyperlink']
+                    "show": ['text', 'password', 'multi-line-text', 'integer', 'decimal','hyperlink']
                 }
             ];
 
@@ -229,6 +229,27 @@ angular.module('flowableModeler').directive('formBuilderElement', ['$rootScope',
                         $scope.formElement.value = $scope.formElement.options[0].name;
                     }
                 }
+            };
+
+            $scope.optionsExpressionChanged = function ($event) {
+            	if(event.target.checked) {
+            		$scope.formElement.options = [];
+                    $scope.formElement.value = '';
+                    $scope.formElement.optionsExpression = '${}';
+            	} else {
+            		$scope.formElement.optionsExpression = null;
+                    if ($scope.formElement.type === 'radio-buttons') {
+                    	$scope.formElement.options = [{ 
+                        	name: $translate.instant('FORM-BUILDER.COMPONENT.RADIO-BUTTON-DEFAULT')
+                        }];
+                    } else if($scope.formElement.type === 'dropdown') {
+                    	$scope.formElement.options = [
+                            {name: $translate.instant('FORM-BUILDER.COMPONENT.DROPDOWN-DEFAULT-EMPTY-SELECTION')}
+                        ];
+	                    $scope.formElement.value = field.options[0];
+	                    $scope.formElement.hasEmptyValue = true;
+            	    }
+            	}
             };
 
             $scope.doneEditing = function () {

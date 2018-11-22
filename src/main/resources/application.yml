@@ -2,15 +2,13 @@ server:
   port: 9090
 spring:
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/flowable?characterEncoding=UTF-8
+    url: jdbc:mysql://127.0.0.1:3306/flowable?characterEncoding=UTF-8&useSSL=false
     username: root
     password: 123
 flowable:
   # 关闭定时任务Job
   async-executor-activate: false
-  check-process-definitions: false
   process-definition-location-prefix: classpath:/processes/
-  process-definition-location-suffixes: classpath:/processes/**.bpmn,classpath:/processes/**.bpmn20.xml
-mybatis: 
+mybatis:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.htcs.flowabledemo.model
