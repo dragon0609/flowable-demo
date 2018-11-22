@@ -43,6 +43,7 @@ flowableModeler
   .config(['$provide', '$routeProvider', '$selectProvider', '$translateProvider', function ($provide, $routeProvider, $selectProvider, $translateProvider) {
 
     var appResourceRoot = FLOWABLE.CONFIG.webContextRoot + (FLOWABLE.CONFIG.webContextRoot ? '/' : '');
+    console.log(appResourceRoot)
     $provide.value('appResourceRoot', appResourceRoot);
 
 

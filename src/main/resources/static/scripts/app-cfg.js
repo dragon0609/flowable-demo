@@ -17,14 +17,20 @@
 
 var FLOWABLE = FLOWABLE || {};
 
-// var pathname = window.location.pathname.replace(/^(\/[^\/]*)(\/.*)?$/, '$1').replace(/\/$/, '');
+var pathname = window.location.pathname.replace(/^(\/[^\/]*)(\/.*)?$/, '$1').replace(/\/$/, '');
 
 FLOWABLE.CONFIG = {
 	// 'onPremise' : true,
 	// 'contextRoot' : pathname,
 	// 'webContextRoot' : pathname,
 	// 'datesLocalization' : false
-    'onPremise' : false,
-    'contextRoot' : '/',
-    'webContextRoot' : '/'
+
+    'onPremise' : true,
+    'contextRoot' : pathname,
+    'webContextRoot' : pathname,
+    'datesLocalization' : false
+
+    // 'onPremise' : false,
+    // 'contextRoot' : '/',
+    // 'webContextRoot' : '/localhost:9090'
 };
